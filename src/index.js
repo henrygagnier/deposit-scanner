@@ -1,5 +1,4 @@
-const Web3 = require("web3");
-const { WebSocketProvider } = require("web3");
+const { WebSocketProvider, Web3 } = require("web3");
 const Address = require("../models/address");
 const abi = require("./ABIs/erc20.json");
 const connectMongoDB = require("../lib/mongodb");
