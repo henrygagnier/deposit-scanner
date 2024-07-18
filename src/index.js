@@ -2,6 +2,8 @@ const { WebSocketProvider, Web3 } = require("web3");
 const Address = require("../models/address");
 const abi = require("./ABIs/erc20.json");
 const connectMongoDB = require("../lib/mongodb");
+const express = require("express");
+const path = require("path");
 
 const web3 = new Web3(
   new WebSocketProvider("wss://ethereum-rpc.publicnode.com")
@@ -41,3 +43,16 @@ async function subscribeToTransfers() {
 }
 
 subscribeToTransfers();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
