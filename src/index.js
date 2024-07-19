@@ -9,6 +9,40 @@ const web3 = new Web3(
   new WebSocketProvider("wss://ethereum-rpc.publicnode.com")
 );
 
+const mongoose = require("mongoose");
+const { Schema, models } = mongoose;
+
+const uptimeSchema = new Schema({}, { timestamps: true });
+
+const Uptime = models.Uptime || mongoose.model("Uptime", uptimeSchema);
+
+const updateInterval = 60000;
+
+var lastUptime = new Date() - updateInterval;
+
+const createUptimeIfElapsed = async () => {
+  if (new Date() - updateInterval >= lastUptime) {
+    lastUptime = new Date();
+    try {
+      await connectMongoDB();
+
+      const lastUptime = await Uptime.findOne().sort({ createdAt: -1 });
+
+      if (
+        !lastUptime ||
+        Date.now() - new Date(lastUptime.createdAt).getTime() > updateInterval
+      ) {
+        const newUptime = new Uptime();
+        await newUptime.save();
+        console.log("New uptime object created");
+      } else {
+      }
+    } catch (error) {
+      console.error("Error creating uptime object:", error);
+    }
+  }
+};
+
 async function subscribeToTransfers() {
   const contract = new web3.eth.Contract(
     abi,
@@ -31,6 +65,8 @@ async function subscribeToTransfers() {
       if (addressDoc) {
         console.log(`User: ${addressDoc.userId}`);
       }
+
+      createUptimeIfElapsed();
     } catch (error) {
       console.error("Error processing event:", error);
     }
@@ -44,7 +80,7 @@ async function subscribeToTransfers() {
 subscribeToTransfers();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(express.static(path.join(__dirname, "public")));
 
