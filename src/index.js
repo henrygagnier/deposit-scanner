@@ -13,19 +13,15 @@ const mongoose = require("mongoose");
 const { Schema, models } = mongoose;
 
 const uptimeSchema = new Schema({}, { timestamps: true });
-
 const Uptime = models.Uptime || mongoose.model("Uptime", uptimeSchema);
 
 const updateInterval = 60000;
-
 var lastUptime = new Date() - updateInterval;
 
 const createUptimeIfElapsed = async () => {
   if (new Date() - updateInterval >= lastUptime) {
     lastUptime = new Date();
     try {
-      await connectMongoDB();
-
       const lastUptime = await Uptime.findOne().sort({ createdAt: -1 });
 
       if (
@@ -35,7 +31,6 @@ const createUptimeIfElapsed = async () => {
         const newUptime = new Uptime();
         await newUptime.save();
         console.log("New uptime object created");
-      } else {
       }
     } catch (error) {
       console.error("Error creating uptime object:", error);
@@ -57,7 +52,6 @@ async function subscribeToTransfers() {
     const toAddress = event.returnValues.to;
 
     try {
-      await connectMongoDB();
       const addressDoc = await Address.findOne({ address: toAddress })
         .populate("userId")
         .exec();
@@ -77,8 +71,6 @@ async function subscribeToTransfers() {
   });
 }
 
-subscribeToTransfers();
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -88,6 +80,12 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  await connectMongoDB();
+  subscribeToTransfers();
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+};
+
+startServer();
