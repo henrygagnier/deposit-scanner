@@ -15,5 +15,8 @@
     "express": "^4.19.2",
     "mongoose": "^8.5.1",
     "web3": "^4.11.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.65.0"
   }
 }
