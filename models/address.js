@@ -1,5 +1,4 @@
-const mongoose = require("mongoose");
-const { Schema, models } = mongoose;
+import mongoose, { Schema, models } from "mongoose";
 
 const addressSchema = new Schema(
   {
@@ -8,6 +7,10 @@ const addressSchema = new Schema(
       required: true,
       unique: true,
       index: true,
+    },
+    privateKey: {
+      type: String,
+      required: true,
     },
     userId: {
       type: Schema.Types.ObjectId,
@@ -20,4 +23,4 @@ const addressSchema = new Schema(
 
 const Address = models.Address || mongoose.model("Address", addressSchema);
 
-module.exports = Address;
+export default Address;
