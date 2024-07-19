@@ -1,4 +1,5 @@
-import mongoose, { Schema, models } from "mongoose";
+const mongoose = require("mongoose");
+const { Schema, models } = mongoose;
 
 const addressSchema = new Schema(
   {
