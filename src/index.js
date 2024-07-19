@@ -9,8 +9,6 @@ const web3 = new Web3(
   new WebSocketProvider("wss://ethereum-rpc.publicnode.com")
 );
 
-connectMongoDB();
-
 async function subscribeToTransfers() {
   const contract = new web3.eth.Contract(
     abi,
@@ -25,6 +23,7 @@ async function subscribeToTransfers() {
     const toAddress = event.returnValues.to;
 
     try {
+      await connectMongoDB();
       const addressDoc = await Address.findOne({ address: toAddress })
         .populate("userId")
         .exec();
@@ -53,7 +52,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
