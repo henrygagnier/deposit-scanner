@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const { Schema, models } = mongoose;
 
 const uptimeSchema = new Schema(
+  {},
   { timestamps: true }
 );
 
