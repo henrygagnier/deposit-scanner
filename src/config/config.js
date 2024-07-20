@@ -2,7 +2,7 @@ const name = "dakEX";
 
 const nullAddress = "0x0000000000000000000000000000000000000000";
 
-const testnetMode = false;
+const testnetMode = true;
 
 const testnetCoins = {
   coins: [
@@ -86,7 +86,7 @@ const testnetChains = {
   arbitrum: {
     chainId: 421614,
     rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc",
-    wssUrl: "wss://sepolia-rollup.arbitrum.io/feed",
+    wssUrl: "wss://arbitrum-sepolia-rpc.publicnode.com",
   },
   fantom: {
     chainId: 4002,
