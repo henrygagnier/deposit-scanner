@@ -2,7 +2,7 @@ const name = "dakEX";
 
 const nullAddress = "0x0000000000000000000000000000000000000000";
 
-const testnetMode = true;
+const testnetMode = false;
 
 const testnetCoins = {
   coins: [
@@ -110,10 +110,27 @@ const chains = testnetMode
       },
     };
 
+const wssOptions = {
+    timeout: 30000,
+    clientConfig: {
+        maxReceivedFrameSize: 100000000,
+        maxReceivedMessageSize: 100000000,
+        keepalive: true,
+        keepaliveInterval: -1
+    },
+    reconnect: {
+        auto: true,
+        delay: 1000,
+        maxAttempts: 10,
+        onTimeout: false
+    }
+};
+
 module.exports = {
   name,
   nullAddress,
   testnetMode,
   coins,
   chains,
+  wssOptions
 };
