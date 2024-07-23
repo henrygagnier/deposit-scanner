@@ -11,6 +11,7 @@ const {
   nullAddress,
   wssOptions,
 } = require("./config/config");
+const listenEthereumEvents = require("./moniter/index");
 
 const updateInterval = 300 * 1000;
 var lastUptime = new Date() - updateInterval;
@@ -18,6 +19,11 @@ const summaryInterval = 10000;
 
 const transactionSummaries = {};
 const subscriptionStatuses = {};
+
+// Heartbeat setup
+const heartbeatInterval = 30000; // 30 seconds
+const pongTimeout = 10000; // 10 seconds
+const web3Instances = {}; // To store Web3 instances for heartbeat
 
 function getContractAddress(chainName, coinName) {
   const coinsList = coins.coins;
@@ -59,7 +65,6 @@ const createUptimeIfElapsed = async () => {
 };
 
 async function subscribeToNativeTransfers(chainName, chainConfig, coin) {
-  const web3 = new Web3(new WebSocketProvider(chainConfig.wssUrl), wssOptions);
   const coinCode = coin.code;
   const chainId = chainConfig.chainId;
 
@@ -86,6 +91,10 @@ async function subscribeToNativeTransfers(chainName, chainConfig, coin) {
   }
 
   try {
+    const web3 = new Web3(new WebSocketProvider(chainConfig.wssUrl, wssOptions));
+    web3Instances[coinCode] = web3Instances[coinCode] || {};
+    web3Instances[coinCode][chainId] = web3;
+
     const subscription = await web3.eth.subscribe("newBlockHeaders");
 
     subscription.on("data", async (blockHeader) => {
@@ -113,6 +122,7 @@ async function subscribeToNativeTransfers(chainName, chainConfig, coin) {
         });
       }
     }).on("connected", () => {
+      console.log(`Connected to ${coin.name}`);
       subscriptionStatuses[coinCode][chainId].status = "Connected";
       subscriptionStatuses[coinCode][chainId].error = null;
     }).on("error", (error) => {
@@ -126,7 +136,7 @@ async function subscribeToNativeTransfers(chainName, chainConfig, coin) {
 }
 
 async function subscribeToTransfers(chainName, chainConfig, coin) {
-  const web3 = new Web3(new WebSocketProvider(chainConfig.wssUrl), wssOptions);
+  const web3 = new Web3(new WebSocketProvider(chainConfig.wssUrl, wssOptions));
   const contract = new web3.eth.Contract(
     abi,
     getContractAddress(chainName, coin.name)
@@ -134,29 +144,10 @@ async function subscribeToTransfers(chainName, chainConfig, coin) {
   const coinCode = coin.code;
   const chainId = chainConfig.chainId;
 
-  if (!transactionSummaries[coinCode]) {
-    transactionSummaries[coinCode] = {};
-  }
-
-  if (!transactionSummaries[coinCode][chainId]) {
-    transactionSummaries[coinCode][chainId] = {
-      transactions: new Set(),
-      deposits: 0,
-    };
-  }
-
-  if (!subscriptionStatuses[coinCode]) {
-    subscriptionStatuses[coinCode] = {};
-  }
-
-  if (!subscriptionStatuses[coinCode][chainId]) {
-    subscriptionStatuses[coinCode][chainId] = {
-      status: "Pending",
-      error: null,
-    };
-  }
-
   try {
+    web3Instances[coinCode] = web3Instances[coinCode] || {};
+    web3Instances[coinCode][chainId] = web3;
+
     const subscription = contract.events.Transfer();
 
     subscription.on("data", async (event) => {
@@ -180,6 +171,7 @@ async function subscribeToTransfers(chainName, chainConfig, coin) {
         console.error(`Error depositing ${coin.code}`, error);
       }
     }).on("connected", () => {
+      console.log(`Connected to ${coin.name}`);
       subscriptionStatuses[coinCode][chainId].status = "Connected";
       subscriptionStatuses[coinCode][chainId].error = null;
     }).on("error", (error) => {
@@ -193,7 +185,7 @@ async function subscribeToTransfers(chainName, chainConfig, coin) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 app.get("/", (req, res) => {
   res.json(subscriptionStatuses);
@@ -202,20 +194,26 @@ app.get("/", (req, res) => {
 const startServer = async () => {
   await connectMongoDB();
 
+  Object.values(chains).forEach((chain) => {
+    const web3 = new Web3(new WebSocketProvider(chain.wssUrl, ...wssOptions));
+
+    subscribeToEthNewBlockHeaders(web3);
+  });
+
   coins.coins.forEach((coin) => {
     coin.chains.forEach((chain) => {
       const chainConfig = chains[chain.chainName.toLowerCase()];
       if (chainConfig) {
         if (chain.contractAddress !== nullAddress) {
-          subscribeToTransfers(chain.chainName, chainConfig, coin);
+          listenEthereumEvents(chainConfig, chain.contractAddress, coin);
           console.log(
             `Subscribed to ${coin.code} transfers on ${chain.chainName}`
           );
         } else {
-          subscribeToNativeTransfers(chain.chainName, chainConfig, coin);
+          /*subscribeToNativeTransfers(chain.chainName, chainConfig, coin);
           console.log(
-            `Subscribed to ${coin.code} transfers on ${chain.chainName}`
-          );
+            `Subscribed to ${coin.code} native transfers on ${chain.chainName}`
+          );*/
         }
       } else {
         console.error(`No configuration found for chain: ${chain.chainName}`);
@@ -240,6 +238,11 @@ const startServer = async () => {
   app.listen(PORT, () => {
     console.log(`Server started: http://localhost:${PORT}`);
   });
+};
+
+const subscribeToEthNewBlockHeaders = async (web3) => {
+  const subscription = await web3.eth.subscribe("newBlockHeaders");
+  subscription.on("data", async (blockHeader) => {});
 };
 
 startServer();

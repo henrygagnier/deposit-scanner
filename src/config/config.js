@@ -2,7 +2,7 @@ const name = "dakEX";
 
 const nullAddress = "0x0000000000000000000000000000000000000000";
 
-const testnetMode = false;
+const testnetMode = true;
 
 const testnetCoins = {
   coins: [
@@ -79,6 +79,17 @@ const coins = testnetMode
             },
           ],
         },
+        {
+          name: "Equalizer",
+          code: "EQUAL",
+          logo: "https://www.worldcryptoindex.com/wp-content/uploads/2018/01/usdt-logo-300.png",
+          chains: [
+            {
+              chainName: "fantom",
+              contractAddress: "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6",
+            },
+          ],
+        },
       ],
     };
 
@@ -110,21 +121,14 @@ const chains = testnetMode
       },
     };
 
-const wssOptions = {
-    timeout: 30000,
-    clientConfig: {
-        maxReceivedFrameSize: 100000000,
-        maxReceivedMessageSize: 100000000,
-        keepalive: true,
-        keepaliveInterval: -1
-    },
-    reconnect: {
-        auto: true,
-        delay: 1000,
-        maxAttempts: 10,
-        onTimeout: false
-    }
-};
+const wssOptions = [
+  {},
+  {
+    delay: 500,
+    autoReconnect: true,
+    maxAttempts: 10,
+  },
+];
 
 module.exports = {
   name,
@@ -132,5 +136,5 @@ module.exports = {
   testnetMode,
   coins,
   chains,
-  wssOptions
+  wssOptions,
 };
